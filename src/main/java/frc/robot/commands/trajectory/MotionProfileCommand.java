@@ -17,6 +17,7 @@ import frc.robot.Constants;
 import frc.robot.subsystems.drivetrain.Drivetrain;
 import frc.robot.util.MotionProfileUtils;
 import org.bananasamirite.robotmotionprofile.TankMotionProfile;
+import org.bananasamirite.robotmotionprofile.TankMotionProfile.MotionProfileState;
 
 public class MotionProfileCommand extends CommandBase {
     @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
@@ -78,7 +79,7 @@ public class MotionProfileCommand extends CommandBase {
         double curTime = timer.get();
 
         double dt = curTime - prevTime;
-        Trajectory.State state = MotionProfileUtils.profileStateToTrajectoryState(this.motionProfile.getStateAtTime(curTime));
+        MotionProfileState state = this.motionProfile.getStateAtTime(curTime);
 
         if (prevTime < 0) {
             subsystem.tankDriveVolts(0, 0);
@@ -87,8 +88,7 @@ public class MotionProfileCommand extends CommandBase {
         }
 
         ChassisSpeeds speeds = ramseteController.calculate(
-                subsystem.getPose()
-                , state);
+                subsystem.getPose(), MotionProfileUtils.positionToPose2d(state.getPose()), state.getVelocity(), state.getAngularVelocity());
         DifferentialDriveWheelSpeeds wheelSpeeds = Constants.Trajectory.kDriveKinematics.toWheelSpeeds(speeds);
 
 
