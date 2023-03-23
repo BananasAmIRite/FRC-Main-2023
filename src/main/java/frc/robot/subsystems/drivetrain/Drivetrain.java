@@ -8,6 +8,7 @@ import com.revrobotics.CANSparkMaxLowLevel;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkMax.IdleMode;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
@@ -177,6 +178,19 @@ public class Drivetrain extends SubsystemBase {
         difDrive.arcadeDrive(throttle, turn, false);
     }
 
+    public void curvatureDrive(double throttle, double turn){
+        throttle = MathUtil.applyDeadband(throttle, 0.05);
+        turn = MathUtil.applyDeadband(turn, 0.05);
+        boolean quickTurn = Math.abs(throttle) < 0.05;
+    
+        var speeds = difDrive.curvatureDriveIK(throttle, turn, quickTurn);  
+    
+        leftMotors.set(speeds.left * 0.35);
+        rightMotors.set(speeds.right * 0.35);
+
+        difDrive.feed();
+    }
+
     public void autoSteerArcadeDrive(double throttle, Pose2d aprilTagPose) { // aprilTagPose = pose relative to robot
         double turnPower = aprilTagPose.getY() * Constants.GridAlign.kSteer * (throttle != 0 ? throttle : 0.25);
 
@@ -210,6 +224,8 @@ public class Drivetrain extends SubsystemBase {
         rightMotors.setVoltage(rightVolts);
         difDrive.feed();
     }
+
+  
 
     // Resets the record values of both sides of encoders.
     public void resetEncoders() {

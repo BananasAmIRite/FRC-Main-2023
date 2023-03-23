@@ -205,9 +205,15 @@ public final class Constants {
         public static final double kTurnMultiplierSM = 0.15;
 
         public static final double kForwardThrottleAccelFilter = 0.85;
-        public static final double kForwardThrottleDecelFilter = 0.8;
+        public static final double kForwardThrottleDecelFilter = 3; //0.8
         public static final double kBackwardThrottleAccelFilter = 0.85;
-        public static final double kBackwardThrottleDecelFilter = 0.8;
+        public static final double kBackwardThrottleDecelFilter = 3; //0.8
+
+        public static final double kFastForwardThrottleAccelFilter = 0.85;
+        public static final double kFastForwardThrottleDecelFilter = 0.8; //0.8
+        public static final double kFastBackwardThrottleAccelFilter = 0.85;
+        public static final double kFastBackwardThrottleDecelFilter = 0.8; //0.8
+
         public static final double kTurnFilter = 3;
 
         // TODO: tune these

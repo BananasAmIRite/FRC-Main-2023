@@ -13,6 +13,10 @@ public class DriverController extends Controller {
     private final SlewRateLimiter throttleForwardFilter = new SlewRateLimiter(Constants.Drivetrain.kForwardThrottleAccelFilter, -Constants.Drivetrain.kForwardThrottleDecelFilter, 0);
     private final SlewRateLimiter throttleBackwardFilter = new SlewRateLimiter(Constants.Drivetrain.kBackwardThrottleAccelFilter, -Constants.Drivetrain.kBackwardThrottleDecelFilter,0);
 
+    private final SlewRateLimiter throttleForwardFilterFast = new SlewRateLimiter(Constants.Drivetrain.kFastForwardThrottleAccelFilter, -Constants.Drivetrain.kFastForwardThrottleDecelFilter, 0);
+    private final SlewRateLimiter throttleBackwardFilterFast = new SlewRateLimiter(Constants.Drivetrain.kFastBackwardThrottleAccelFilter, -Constants.Drivetrain.kFastBackwardThrottleDecelFilter, 0);
+
+
     private final SlewRateLimiter turnFilter = new SlewRateLimiter(Constants.Drivetrain.kTurnFilter);
 
     private double deadzone; 
@@ -53,13 +57,13 @@ public class DriverController extends Controller {
     }
 
     public double getThrottle() {
-        double throttle = -getLeftStickY() * throttleMultiplier;
+        double throttle = -getLeftStickY();
         double effThrottle = 0; 
-        if (mode == Mode.SLOW) {
-            effThrottle = throttle;
-            throttleBackwardFilter.reset(0); 
-            throttleForwardFilter.reset(0); 
-        } else {
+        // if (mode == Mode.SLOW) {
+        //     effThrottle = throttle;
+        //     throttleBackwardFilter.reset(0); 
+        //     throttleForwardFilter.reset(0); 
+        // } else {
             if (lastEffThrottle > 0) {
                 effThrottle = throttleForwardFilter.calculate(Math.max(throttle, 0)); 
                 throttleBackwardFilter.reset(0);
@@ -69,7 +73,31 @@ public class DriverController extends Controller {
             } else {
                 effThrottle = throttle > 0 ? throttleForwardFilter.calculate(throttle) : throttle < 0 ? -throttleBackwardFilter.calculate(-throttle) : 0; 
             }
-        }
+        //}
+        
+        // if (lastNonzeroThrottle != 0)
+        lastEffThrottle = effThrottle; 
+        return lastEffThrottle; 
+    }
+
+    public double getFastThrottle() {
+        double throttle = -getLeftStickY() * throttleMultiplier;
+        double effThrottle = 0; 
+        // if (mode == Mode.SLOW) {
+        //     effThrottle = throttle;
+        //     throttleBackwardFilter.reset(0); 
+        //     throttleForwardFilter.reset(0); 
+        // } else {
+            if (lastEffThrottle > 0) {
+                effThrottle = throttleForwardFilterFast.calculate(Math.max(throttle, 0)); 
+                throttleBackwardFilterFast.reset(0);
+            } else if (lastEffThrottle < 0) {
+                effThrottle = -throttleBackwardFilterFast.calculate(-Math.min(throttle, 0)); 
+                throttleForwardFilterFast.reset(0);
+            } else {
+                effThrottle = throttle > 0 ? throttleForwardFilterFast.calculate(throttle) : throttle < 0 ? -throttleBackwardFilterFast.calculate(-throttle) : 0; 
+            }
+        //}
         
         // if (lastNonzeroThrottle != 0)
         lastEffThrottle = effThrottle; 
@@ -77,8 +105,15 @@ public class DriverController extends Controller {
     }
 
     public double getTurn() {
-        if (turnMultiplier != Constants.Drivetrain.kTurnMultiplierSM) turnMultiplier = getQuickTurn() ? Constants.Drivetrain.kQuickTurnMultiplier : MathUtil.clamp(((Constants.Drivetrain.kFastThrottleTurnMultiplier - Constants.Drivetrain.kSlowThrottleTurnMultiplier) * (Math.abs(lastEffThrottle / throttleMultiplier) - 1) + Constants.Drivetrain.kFastThrottleTurnMultiplier), Constants.Drivetrain.kFastThrottleTurnMultiplier, Constants.Drivetrain.kSlowThrottleTurnMultiplier); 
-        return turnFilter.calculate(-getRightStickX() * turnMultiplier); 
+        // if (turnMultiplier != Constants.Drivetrain.kTurnMultiplierSM) turnMultiplier = getQuickTurn() ? Constants.Drivetrain.kQuickTurnMultiplier : MathUtil.clamp(((Constants.Drivetrain.kFastThrottleTurnMultiplier - Constants.Drivetrain.kSlowThrottleTurnMultiplier) * (Math.abs(lastEffThrottle / throttleMultiplier) - 1) + Constants.Drivetrain.kFastThrottleTurnMultiplier), Constants.Drivetrain.kFastThrottleTurnMultiplier, Constants.Drivetrain.kSlowThrottleTurnMultiplier); 
+        // return turnFilter.calculate(-getRightStickX() * turnMultiplier); 
+        return -getLeftStickX();
+    }
+
+    public double getFastTurn() {
+        // if (turnMultiplier != Constants.Drivetrain.kTurnMultiplierSM) turnMultiplier = getQuickTurn() ? Constants.Drivetrain.kQuickTurnMultiplier : MathUtil.clamp(((Constants.Drivetrain.kFastThrottleTurnMultiplier - Constants.Drivetrain.kSlowThrottleTurnMultiplier) * (Math.abs(lastEffThrottle / throttleMultiplier) - 1) + Constants.Drivetrain.kFastThrottleTurnMultiplier), Constants.Drivetrain.kFastThrottleTurnMultiplier, Constants.Drivetrain.kSlowThrottleTurnMultiplier); 
+        // return turnFilter.calculate(-getRightStickX() * turnMultiplier); 
+        return -getLeftStickX() * turnMultiplier;
     }
 
     public boolean getQuickTurn() {

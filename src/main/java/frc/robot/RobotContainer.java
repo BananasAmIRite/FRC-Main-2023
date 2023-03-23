@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj2.command.RunCommand;
 import frc.robot.subsystems.gyro.Gyro;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.drivetrain.Drivetrain;
+import frc.robot.subsystems.drivetrain.commands.FastDrive;
 import frc.robot.subsystems.drivetrain.commands.MoveBackward;
 import frc.robot.subsystems.drivetrain.commands.MoveForward;
 import frc.robot.subsystems.drivetrain.commands.TeleopDrive;
@@ -64,8 +65,8 @@ public class RobotContainer {
 
   private void configureButtonBindings() {
     // driver slow mode
-    Controller.onHold(driverController.RightBumper, new InstantCommand(() -> driverController.setSlowMode(Mode.SLOW)));
-    Controller.onRelease(driverController.RightBumper, new InstantCommand(() -> driverController.setSlowMode(Mode.NORMAL)));
+    Controller.onHold(driverController.RightBumper, new RunCommand(() -> new FastDrive(drivetrain, driverController)));
+    Controller.onRelease(driverController.RightBumper, new RunCommand(() -> new TeleopDrive(drivetrain, driverController)));
 
     // manipulator grid align
     // Controller.onBothPress(manipulatorController.LeftBumper, manipulatorController.RightBumper, new ScanAndAlign(drivetrain, arm, poseTracker, manipulatorController));
