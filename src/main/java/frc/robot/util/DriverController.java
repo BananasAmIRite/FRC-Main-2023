@@ -89,16 +89,28 @@ public class DriverController extends Controller {
         //     throttleForwardFilter.reset(0); 
         // } else {
             if (lastEffThrottle > 0) {
-                effThrottle = throttleForwardFilterFast.calculate(Math.max(throttle, 0)); 
-                throttleBackwardFilterFast.reset(0);
-            } else if (lastEffThrottle < 0) {
-                effThrottle = -throttleBackwardFilterFast.calculate(-Math.min(throttle, 0)); 
-                throttleForwardFilterFast.reset(0);
-            } else {
+                if(lastEffThrottle >= 0.3){
+                    effThrottle = throttleForwardFilter.calculate(Math.max(throttle, 0)); 
+                    throttleBackwardFilter.reset(0);
+                }
+                else{
+                    effThrottle = throttleForwardFilterFast.calculate(Math.max(throttle, 0)); 
+                    throttleBackwardFilterFast.reset(0);
+                } 
+            } 
+            else if (lastEffThrottle < 0) {
+                if(lastEffThrottle <= 0.3){
+                    effThrottle = -throttleBackwardFilter.calculate(-Math.min(throttle, 0)); 
+                    throttleForwardFilter.reset(0);
+                }
+                else{
+                    effThrottle = -throttleBackwardFilterFast.calculate(-Math.min(throttle, 0)); 
+                    throttleForwardFilterFast.reset(0);
+                }
+            } 
+            else {
                 effThrottle = throttle > 0 ? throttleForwardFilterFast.calculate(throttle) : throttle < 0 ? -throttleBackwardFilterFast.calculate(-throttle) : 0; 
             }
-        //}
-        
         // if (lastNonzeroThrottle != 0)
         lastEffThrottle = effThrottle; 
         return lastEffThrottle; 

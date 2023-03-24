@@ -10,10 +10,13 @@ import com.revrobotics.CANSparkMax.IdleMode;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive.WheelSpeeds;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -189,6 +192,43 @@ public class Drivetrain extends SubsystemBase {
         rightMotors.set(speeds.right * 0.35);
 
         difDrive.feed();
+    }
+
+    private void cheesyDrive(double throttle, double turn){
+        throttle = MathUtil.applyDeadband(throttle, 0.05);
+        turn = MathUtil.applyDeadband(throttle, 0.05);
+        boolean quickTurn = Math.abs(throttle) < 0.05;
+        double maxOutput = quickTurn ? 0.3 : 0.5;
+
+        final double kWheelGain = 0.05;
+        final double kWheelNonlinearity = 0.05; //how fast we traverse arc during throttle
+        final double denominator = Math.sin(Math.PI / 2.0 * kWheelNonlinearity);
+        // Apply a sin function that's scaled to make it feel better.
+        if (!quickTurn) {
+            turn = Math.sin(Math.PI / 2.0 * kWheelNonlinearity * turn);
+            turn = Math.sin(Math.PI / 2.0 * kWheelNonlinearity * turn);
+            turn = turn / (denominator * denominator) * Math.abs(throttle);
+        }
+
+        turn *= kWheelGain;
+        var signal = inverseKinematics(new Twist2d(throttle, 0.0, turn));
+        double scaling_factor = Math.max(1.0, Math.max(Math.abs(signal.left), Math.abs(signal.right)));
+        var speeds = new WheelSpeeds(signal.left / scaling_factor, signal.right / scaling_factor);
+
+        leftMotors.set(speeds.left * maxOutput);
+        rightMotors.set(speeds.right * maxOutput);
+
+        difDrive.feed();
+    }
+
+    public static WheelSpeeds inverseKinematics(Twist2d velocity) {
+        double kEpsilon = 1E-9;
+
+        if (Math.abs(velocity.dtheta) < kEpsilon) {
+            return new WheelSpeeds(velocity.dx, velocity.dx);
+        }
+        double delta_v = Units.metersToInches(Constants.Trajectory.kTrackWidthMeters) * velocity.dtheta / (2 * 1); // 1= track scrub factor
+        return new WheelSpeeds(velocity.dx - delta_v, velocity.dx + delta_v);
     }
 
     public void autoSteerArcadeDrive(double throttle, Pose2d aprilTagPose) { // aprilTagPose = pose relative to robot
